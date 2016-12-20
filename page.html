@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+
+path.line {
+    stroke: rgba(0,0,0,0.3);
+    fill: none;
+}
+path#USA {
+    stroke: red;
+    stroke-width: 2px;
+}
+
+</style>
+<svg width="960" height="500" id="chart1"></svg>
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script>
+
+var svg = d3.select("svg#chart1"),
+    margin = {top: 20, right: 80, bottom: 30, left: 50},
+    width = svg.attr("width") - margin.left - margin.right,
+    height = svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var x = d3.scaleLinear().range([0, width]),
+    y = d3.scaleLinear().range([height, 0]),
+    z = d3.scaleOrdinal(d3.schemeCategory10);
+
+var line = d3.line()
+    .x(function(d) { return x(d.Year); })
+    .y(function(d) { return y(d.turnout); });
+
+d3.csv("data/pres.csv", type, function(error, data) {
+  if (error) throw error;
+
+  var states = data.columns.slice(1).map(function(id) {
+    return {
+      id: id,
+      values: data.map(function(d) {
+        return {Year: d.Year, turnout: d[id]};
+      })
+    };
+  });
+
+  x.domain(d3.extent(data, function(d) { return d.Year; }));
+
+  y.domain([0, 1]);
+
+  z.domain(states.map(function(c) { return c.id; }));
+
+  g.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x)
+            .ticks(20, 'd'));
+
+  g.append("g")
+      .attr("class", "axis axis--y")
+      .call(d3.axisLeft(y))
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .attr("fill", "#000")
+      .text("Turnout");
+
+  var state = g.selectAll(".state")
+    .data(states)
+    .enter().append("g")
+      .attr("class", "state");
+
+  state.append("path")
+      .attr("class", "line")
+      .attr('id', function(d) { return d.id; })
+      .attr("d", function(d) { return line(d.values); });
+
+  /*state.append("text")
+      .datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
+      .attr("transform", function(d) { return "translate(" + x(d.value.Year) + "," + y(d.value.turnout) + ")"; })
+      .attr("x", 3)
+      .attr("dy", "0.35em")
+      .style("font", "10px sans-serif")
+      .text(function(d) { return d.id; });*/
+});
+
+function type(d, _, columns) {
+  for (var i = 1, n = columns.length, c; i < n; ++i) d[c = columns[i]] = +d[c];
+  return d;
+}
+
+</script>
